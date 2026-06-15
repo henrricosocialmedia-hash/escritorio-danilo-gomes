@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useSearchParams } from 'next/navigation'
 
@@ -25,7 +25,7 @@ interface Aluno {
   foto_url: string | null
 }
 
-export default function ImprimirCarteirinhaPage() {
+function ImprimirConteudo() {
   const searchParams = useSearchParams()
   const cursoId = searchParams.get('curso_id')
   const alunosIds = searchParams.get('alunos')?.split(',') || []
@@ -184,9 +184,7 @@ export default function ImprimirCarteirinhaPage() {
         }
         .validade-label { font-size: 8px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
         .validade-data { font-size: 10px; font-weight: 700; color: #ea580c; }
-        .assinatura {
-          text-align: center;
-        }
+        .assinatura { text-align: center; }
         .assinatura-linha {
           width: 80px;
           height: 1px;
@@ -194,13 +192,6 @@ export default function ImprimirCarteirinhaPage() {
           margin: 0 auto 2px;
         }
         .assinatura-texto { font-size: 7.5px; color: #9ca3af; }
-        .page-title {
-          text-align: center;
-          padding: 16px;
-          font-size: 14px;
-          color: #6b7280;
-          font-weight: 600;
-        }
         .btn-imprimir {
           display: block;
           margin: 0 auto 16px;
@@ -227,7 +218,6 @@ export default function ImprimirCarteirinhaPage() {
       <div className="carteirinha-grid">
         {alunos.map(aluno => (
           <div key={aluno.id} className="card">
-            {/* Cabeçalho laranja */}
             <div className="card-header">
               <div className="card-header-logo">DG</div>
               <div className="card-header-text">
@@ -236,7 +226,6 @@ export default function ImprimirCarteirinhaPage() {
               </div>
             </div>
 
-            {/* Corpo */}
             <div className="card-body">
               <div className="foto-wrapper">
                 {aluno.foto_url ? (
@@ -278,7 +267,6 @@ export default function ImprimirCarteirinhaPage() {
               </div>
             </div>
 
-            {/* Rodapé */}
             <div className="card-footer">
               <div>
                 <div className="validade-label">Válido até</div>
@@ -293,5 +281,17 @@ export default function ImprimirCarteirinhaPage() {
         ))}
       </div>
     </>
+  )
+}
+
+export default function ImprimirCarteirinhaPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-400">Carregando...</p>
+      </div>
+    }>
+      <ImprimirConteudo />
+    </Suspense>
   )
 }
