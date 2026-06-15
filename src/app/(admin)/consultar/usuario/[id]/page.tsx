@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { buscarCEP, formatarCEP } from '@/lib/viacep'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, MessageSquare, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, MessageSquare, Trash2, AlertTriangle } from 'lucide-react'
 
 interface Usuario {
   id: string
@@ -24,6 +24,7 @@ interface Usuario {
   cidade: string
   estado: string
   ativo: boolean
+  observacao: boolean
 }
 
 interface Atendimento {
@@ -42,6 +43,7 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
   const [salvando, setSalvando] = useState(false)
   const [buscandoCEP, setBuscandoCEP] = useState(false)
   const [editando, setEditando] = useState(false)
+  const [togglingObs, setTogglingObs] = useState(false)
 
   useEffect(() => {
     carregarUsuario()
@@ -62,10 +64,30 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
     setLoading(false)
   }
 
+  async function toggleObservacao() {
+    if (!usuario) return
+    const novoValor = !usuario.observacao
+    const confirmMsg = novoValor
+      ? 'Ativar observação neste cadastro?'
+      : 'Remover observação deste cadastro?'
+    if (!confirm(confirmMsg)) return
+    setTogglingObs(true)
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ observacao: novoValor })
+      .eq('id', usuario.id)
+    if (error) {
+      toast.error('Erro ao atualizar observação')
+    } else {
+      setUsuario(u => u ? { ...u, observacao: novoValor } : u)
+      toast.success(novoValor ? 'Observação ativada' : 'Observação removida')
+    }
+    setTogglingObs(false)
+  }
+
   async function salvar() {
     if (!usuario) return
     setSalvando(true)
-
     const { error } = await supabase
       .from('usuarios')
       .update({
@@ -84,7 +106,6 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
         estado: usuario.estado || null,
       })
       .eq('id', usuario.id)
-
     if (error) {
       toast.error(`Erro ao salvar: ${error.message}`)
     } else {
@@ -99,7 +120,6 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
     setBuscandoCEP(true)
     const resultado = await buscarCEP(usuario.cep)
     setBuscandoCEP(false)
-
     if (resultado.sucesso && resultado.endereco) {
       const { logradouro, bairro, localidade, uf } = resultado.endereco
       setUsuario(u => u ? { ...u, endereco: logradouro, bairro, cidade: localidade, estado: uf } : u)
@@ -112,10 +132,8 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
   async function enviarWhatsApp() {
     const numero = usuario?.whatsapp || usuario?.telefone
     if (!numero) { toast.error('Sem telefone cadastrado'); return }
-
     const msg = prompt(`Mensagem para ${usuario?.nome.split(' ')[0]}:`)
     if (!msg) return
-
     const res = await fetch('/api/notificacoes/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -167,12 +185,38 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
 
   return (
     <div className="max-w-3xl">
+
+      {/* ⚠️ BANNER OBSERVAÇÃO */}
+      {usuario.observacao && (
+        <div className="flex items-center justify-center gap-3 bg-red-600 text-white rounded-xl px-6 py-4 mb-5 shadow-lg">
+          <AlertTriangle size={28} className="flex-shrink-0" />
+          <span style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '0.05em' }}>
+            OBSERVAÇÃO
+          </span>
+          <AlertTriangle size={28} className="flex-shrink-0" />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
           <ArrowLeft size={16} /> Voltar
         </button>
         <div className="flex items-center gap-2">
+          {/* Botão observação */}
+          <button
+            onClick={toggleObservacao}
+            disabled={togglingObs}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-60 ${
+              usuario.observacao
+                ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100'
+                : 'border-gray-300 text-gray-500 hover:bg-gray-50'
+            }`}
+          >
+            <AlertTriangle size={15} />
+            {usuario.observacao ? 'Remover observação' : 'Marcar observação'}
+          </button>
+
           {(usuario.whatsapp || usuario.telefone) && (
             <button onClick={enviarWhatsApp}
               className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -208,16 +252,25 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
       {/* Dados pessoais */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
+            usuario.observacao ? 'bg-red-500' : 'bg-orange-500'
+          }`}>
             {usuario.nome.charAt(0)}
           </div>
           <div>
             <h2 className="font-semibold text-gray-800">{usuario.nome}</h2>
             <p className="text-sm text-gray-400">CPF: {formatarCPF(usuario.cpf)}</p>
           </div>
-          <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-medium ${usuario.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}`}>
-            {usuario.ativo ? '● Ativo' : '○ Inativo'}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            {usuario.observacao && (
+              <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-red-100 text-red-600 flex items-center gap-1">
+                <AlertTriangle size={11} /> Observação
+              </span>
+            )}
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${usuario.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}`}>
+              {usuario.ativo ? '● Ativo' : '○ Inativo'}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -233,7 +286,6 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
       {/* Endereço */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Endereço</h3>
-
         {editando && (
           <div className="flex gap-3 mb-4">
             <div className="flex-1">
@@ -254,7 +306,6 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
             </div>
           </div>
         )}
-
         <div className="grid grid-cols-2 gap-4">
           {!editando && campo('CEP', 'cep')}
           {campo('Endereço', 'endereco')}
@@ -271,7 +322,6 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
           Histórico de atendimentos ({atendimentos.length})
         </h3>
-
         {atendimentos.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6">Nenhum atendimento registrado</p>
         ) : (
