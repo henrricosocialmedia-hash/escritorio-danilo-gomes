@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import {
   Home, Users, UserPlus, Tag, BadgeCheck,
   Search, List, Image, MessageSquare, LogOut, Menu, X,
-  ShieldCheck, BookOpen, Baby
+  ShieldCheck, BookOpen, Baby, CreditCard
 } from 'lucide-react'
 
 const navItems = [
@@ -25,6 +25,7 @@ const navItems = [
   { label: 'Atendimentos', href: '/consultar/atendimentos', icon: List },
   { section: 'Cursos' },
   { label: 'Gerenciar Cursos', href: '/cursos', icon: BookOpen },
+  { label: 'Carteirinhas', href: '/carteirinha', icon: CreditCard },
   { section: 'Administração' },
   { label: 'Aprovação de Acessos', href: '/aprovacao', icon: ShieldCheck },
   { section: 'Outros' },
