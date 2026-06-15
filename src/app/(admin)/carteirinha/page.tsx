@@ -143,11 +143,11 @@ export default function CarteirinhaPage() {
       return
     }
     const ids = alunosFiltrados.map(a => a.id).join(',')
-    window.open(`/carteirinha/imprimir?curso_id=${cursoSelecionado?.id}&alunos=${ids}`, '_blank')
+    window.open(`/imprimir-carteirinha?curso_id=${cursoSelecionado?.id}&alunos=${ids}`, '_blank')
   }
 
   function imprimirAluno(aluno: Aluno) {
-    window.open(`/carteirinha/imprimir?curso_id=${cursoSelecionado?.id}&alunos=${aluno.id}`, '_blank')
+    window.open(`/imprimir-carteirinha?curso_id=${cursoSelecionado?.id}&alunos=${aluno.id}`, '_blank')
   }
 
   const alunosFiltrados = alunos.filter(a =>
