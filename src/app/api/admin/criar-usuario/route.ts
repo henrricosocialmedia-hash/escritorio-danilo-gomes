@@ -2,10 +2,15 @@
 // Cria usuário no Supabase Auth quando admin aprova uma solicitação
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { criarSupabaseAdmin, usuarioDaRequisicao } from '@/lib/supabase-admin'
 
 export async function POST(req: NextRequest) {
   try {
+    // Só quem já está logado no sistema pode criar novos acessos
+    if (!(await usuarioDaRequisicao(req))) {
+      return NextResponse.json({ sucesso: false, erro: 'Não autorizado' }, { status: 401 })
+    }
+
     const { email, senha, nome } = await req.json()
 
     if (!email || !senha || !nome) {
@@ -13,11 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Usa a service role key para criar usuários (nunca exposta ao cliente)
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
+    const supabaseAdmin = criarSupabaseAdmin()
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,

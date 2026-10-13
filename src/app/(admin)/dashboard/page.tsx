@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAutenticado } from '@/lib/api'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -87,7 +88,7 @@ export default function Dashboard() {
     const { data: config } = await supabase.from('configuracoes').select('valor').eq('chave', 'msg_aniversario').single()
     const template = config?.valor || 'Feliz aniversário, {nome}! 🎂'
 
-    const res = await fetch('/api/notificacoes/whatsapp', {
+    const res = await fetchAutenticado('/api/notificacoes/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
