@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
+import { fetchAutenticado } from '@/lib/api'
 import { buscarCEP, formatarCEP, formatarCPF, formatarTelefone } from '@/lib/viacep'
 
 type FormData = {
@@ -127,7 +128,7 @@ export default function CadastrarUsuario() {
         const { data: config } = await supabase.from('configuracoes').select('valor').eq('chave', 'msg_boas_vindas').single()
         const template = config?.valor || 'Olá {nome}! 🎉 Bem-vindo(a) à IECE Guarulhos!'
 
-        const res = await fetch('/api/notificacoes/whatsapp', {
+        const res = await fetchAutenticado('/api/notificacoes/whatsapp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

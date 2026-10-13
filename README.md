@@ -54,11 +54,16 @@ cp .env.local.example .env.local
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://SEU_PROJETO.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_anon_key
+SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
 ZAPI_INSTANCE_ID=seu_instance_id
 ZAPI_TOKEN=seu_token
 ZAPI_CLIENT_TOKEN=seu_client_token
 CRON_SECRET=uma_senha_secreta_qualquer
 ```
+
+> `SUPABASE_SERVICE_ROLE_KEY` (Settings > API > service_role) é obrigatória: as rotas do servidor usam essa chave para criar acessos aprovados, gravar o log do WhatsApp e rodar o cron. Nunca coloque essa chave em variáveis `NEXT_PUBLIC_`.
+>
+> `CRON_SECRET` também é obrigatória: sem ela o cron de aniversários fica bloqueado.
 
 ### 4. Instalar e rodar
 
@@ -86,13 +91,13 @@ Para enviar WhatsApp automaticamente para aniversariantes todo dia às 8h:
 
 ### Opção 1: Vercel Cron (recomendado)
 
-Adicione em `vercel.json`:
+Já configurado em `vercel.json` (o horário do cron é em UTC: `0 11 * * *` = 8h de Brasília). A Vercel envia o `CRON_SECRET` automaticamente:
 
 ```json
 {
   "crons": [{
     "path": "/api/cron/aniversarios",
-    "schedule": "0 8 * * *"
+    "schedule": "0 11 * * *"
   }]
 }
 ```

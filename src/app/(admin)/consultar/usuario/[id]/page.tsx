@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAutenticado } from '@/lib/api'
 import { buscarCEP, formatarCEP } from '@/lib/viacep'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -134,7 +135,7 @@ export default function UsuarioDetalhe({ params }: { params: { id: string } }) {
     if (!numero) { toast.error('Sem telefone cadastrado'); return }
     const msg = prompt(`Mensagem para ${usuario?.nome.split(' ')[0]}:`)
     if (!msg) return
-    const res = await fetch('/api/notificacoes/whatsapp', {
+    const res = await fetchAutenticado('/api/notificacoes/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
