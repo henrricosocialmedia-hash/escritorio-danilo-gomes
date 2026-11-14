@@ -34,6 +34,7 @@ Sistema completo para gestão de usuários, atendimentos e notificações da IEC
 
 1. Acesse https://app.supabase.com e crie um novo projeto
 2. Vá em **SQL Editor** e execute o conteúdo de `supabase/migrations/001_schema.sql`
+   e depois o de `supabase/migrations/002_tabelas_faltantes.sql` (cursos, inscrições, presenças, dependentes, pedidos de acesso e pastas de fotos)
 3. Anote a **Project URL** e **anon key** em Settings > API
 
 ### 2. Z-API
