@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAutenticado } from '@/lib/api'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { Search, MessageSquare, ExternalLink, Download, FileText, SlidersHorizontal, X } from 'lucide-react'
@@ -200,7 +201,7 @@ export default function ConsultarUsuarios() {
     if (!numero) { toast.error('Usuário sem telefone'); return }
     const msg = prompt(`Mensagem para ${usuario.nome.split(' ')[0]}:`)
     if (!msg) return
-    const res = await fetch('/api/notificacoes/whatsapp', {
+    const res = await fetchAutenticado('/api/notificacoes/whatsapp', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usuario_id: usuario.id, telefone: numero, tipo: 'manual', mensagem_template: msg, variaveis: {} }),
     })

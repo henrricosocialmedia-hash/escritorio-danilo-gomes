@@ -3,20 +3,25 @@
 // Envia WhatsApp automático para aniversariantes do dia
 
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { criarSupabaseAdmin } from '@/lib/supabase-admin'
 import { enviarWhatsApp, montarMensagem } from '@/lib/zapi'
 
 // Proteção por secret para evitar chamadas não autorizadas
 const CRON_SECRET = process.env.CRON_SECRET || ''
 
 export async function GET(req: NextRequest) {
-  // Verifica o token de autorização
+  // Verifica o token de autorização (a Vercel envia o CRON_SECRET automaticamente)
+  // Sem CRON_SECRET configurado a rota fica bloqueada, para ninguém disparar envios em massa
   const authHeader = req.headers.get('authorization')
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ erro: 'Não autorizado' }, { status: 401 })
   }
 
   try {
+    // Cliente admin: o cron roda sem usuário logado, e com a anon key o RLS
+    // devolveria as tabelas vazias (o envio nunca acontecia)
+    const supabase = criarSupabaseAdmin()
+
     // Busca configurações
     const { data: configs } = await supabase
       .from('configuracoes')
@@ -32,10 +37,10 @@ export async function GET(req: NextRequest) {
 
     const template = configMap['msg_aniversario'] || 'Feliz aniversário, {nome}! 🎂'
 
-    // Busca aniversariantes de hoje
-    const hoje = new Date()
-    const mesHoje = String(hoje.getMonth() + 1).padStart(2, '0')
-    const diaHoje = String(hoje.getDate()).padStart(2, '0')
+    // Busca aniversariantes de hoje, no horário de Brasília (o servidor roda em UTC)
+    const [, mesHoje, diaHoje] = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date()).split('-')
 
     const { data: aniversariantes } = await supabase
       .from('usuarios')

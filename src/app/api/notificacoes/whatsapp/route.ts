@@ -3,10 +3,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { enviarWhatsApp, montarMensagem } from '@/lib/zapi'
-import { supabase } from '@/lib/supabase'
+import { criarSupabaseAdmin, usuarioDaRequisicao } from '@/lib/supabase-admin'
 
 export async function POST(req: NextRequest) {
   try {
+    // Sem isso qualquer pessoa na internet poderia disparar mensagens pelo número da instituição
+    if (!(await usuarioDaRequisicao(req))) {
+      return NextResponse.json({ erro: 'Não autorizado', sucesso: false }, { status: 401 })
+    }
+
     const body = await req.json()
     const { usuario_id, telefone, tipo, mensagem_template, variaveis } = body
 
@@ -24,7 +29,8 @@ export async function POST(req: NextRequest) {
     const resultado = await enviarWhatsApp(telefone, mensagem)
 
     // Registra no log independente do resultado
-    await supabase.from('notificacoes_log').insert({
+    // (cliente admin: a rota roda no servidor, sem sessão, e o RLS bloquearia o insert)
+    await criarSupabaseAdmin().from('notificacoes_log').insert({
       usuario_id: usuario_id || null,
       tipo: tipo || 'manual',
       canal: 'whatsapp',

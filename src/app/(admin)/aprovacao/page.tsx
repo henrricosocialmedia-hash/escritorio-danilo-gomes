@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAutenticado } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { CheckCircle, XCircle, Clock } from 'lucide-react'
@@ -38,27 +39,16 @@ export default function AprovacaoAcessos() {
 
     try {
       // Cria o usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin
-        ? await fetch('/api/admin/criar-usuario', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: sol.email, senha: sol.senha_temp, nome: sol.nome }),
-          }).then(r => r.json())
-        : { data: null, error: { message: 'Admin API não disponível' } }
-
-      if (authError && typeof authError === 'object' && 'message' in authError) {
-        // Fallback: tenta via API route
-        const res = await fetch('/api/admin/criar-usuario', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: sol.email, senha: sol.senha_temp, nome: sol.nome }),
-        })
-        const resultado = await res.json()
-        if (!resultado.sucesso) {
-          toast.error(`Erro ao criar usuário: ${resultado.erro}`)
-          setProcessando(null)
-          return
-        }
+      const res = await fetchAutenticado('/api/admin/criar-usuario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: sol.email, senha: sol.senha_temp, nome: sol.nome }),
+      })
+      const resultado = await res.json()
+      if (!resultado.sucesso) {
+        toast.error(`Erro ao criar usuário: ${resultado.erro}`)
+        setProcessando(null)
+        return
       }
 
       // Atualiza status
@@ -66,6 +56,9 @@ export default function AprovacaoAcessos() {
         status: 'aprovado',
         updated_at: new Date().toISOString(),
       }).eq('id', sol.id)
+
+      // A senha já foi usada para criar o acesso; não deixa guardada em texto puro
+      await supabase.from('solicitacoes_acesso').update({ senha_temp: null }).eq('id', sol.id)
 
       // Cadastra como atendente
       await supabase.from('atendentes').upsert({
@@ -91,6 +84,7 @@ export default function AprovacaoAcessos() {
       status: 'reprovado',
       updated_at: new Date().toISOString(),
     }).eq('id', sol.id)
+    await supabase.from('solicitacoes_acesso').update({ senha_temp: null }).eq('id', sol.id)
 
     toast.success('Solicitação reprovada')
     setProcessando(null)

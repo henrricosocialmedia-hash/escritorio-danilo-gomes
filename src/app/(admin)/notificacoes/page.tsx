@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { fetchAutenticado } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { RefreshCw, MessageSquare, Send } from 'lucide-react'
@@ -69,7 +70,7 @@ export default function Notificacoes() {
     if (!telefoneManual || !msgManual) { toast.error('Preencha telefone e mensagem'); return }
     setEnviandoManual(true)
 
-    const res = await fetch('/api/notificacoes/whatsapp', {
+    const res = await fetchAutenticado('/api/notificacoes/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
